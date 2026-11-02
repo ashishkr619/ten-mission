@@ -50,6 +50,8 @@ DATABASES = {
         # reuse connections between requests
         "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
         "CONN_HEALTH_CHECKS": True,  # replace a dead connection instead of failing the request
+        # Skip the unused Kerberos (GSS) encryption attempt: it costs ~0.5 s per new connection in Docker on a Mac.
+        "OPTIONS": {"gssencmode": "disable"},
     }
 }
 
