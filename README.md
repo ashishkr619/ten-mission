@@ -203,12 +203,20 @@ Built with production in mind, but not a complete production system. Left out on
 4. **A limit per membership tier,** instead of one `MAX_BOOKINGS` for everyone.
 5. **An audit trail** for the concierge team: who booked or cancelled what, for whom.
 
-**For scale** (see [docs/performance.md](docs/performance.md))
+**For scale**, in this order, and only as measurements call for each step. Bookings stay synchronous, and Postgres always decides who gets a place.
 
-6. **Booking in one Postgres function:** in an experiment, bookings were 2–3× faster with one database round trip. The Django version stays because it's easier to read, test and change.
-7. **Keyset paging and cached counts** for very large lists.
-8. **One row per place, or a split counter,** for one extremely popular item; today every booking of an item queues on its row.
-9. **An outbox table** for notifications, more app servers, and a read replica for the list pages.
+| # | Step | Why |
+|---|---|---|
+| 1 | **Production metrics and tracing** | The load test found this machine's limits; real traffic, on real servers, needs the same answers all the time |
+| 2 | **Rate limits and bot protection**, per IP at the edge and per member in the app | The cheapest protection; on a popular release, bots and repeat clicks are much of the traffic |
+| 3 | **More app servers, plus PgBouncer** | The app keeps no state between requests, so it scales by adding copies; PgBouncer keeps Postgres connections bounded |
+| 4 | **Cached reads:** a few seconds of CDN or Redis cache, read replicas, cursor pagination | Browsing far outweighs booking; a stale list is fine, a stale booking never is |
+| 5 | **An early "sold out" answer, and a waiting room for big releases** | Once a release sells out, almost every request is a "no"; answer those without touching the database, and let people in at the rate one item can take |
+| 6 | **An outbox table and workers** for confirmations, supplier updates and payments | Slow work leaves the booking request, and nothing is lost or sent twice |
+| 7 | **Django REST Framework** | Less custom code: serializers, throttling, cursor pagination, versioning. For maintainability, not speed |
+| 8 | **A faster write path:** booking in one Postgres function; split counters for the hottest items | Measured 2–3× faster per booking ([docs/performance.md](docs/performance.md)); split counters let many bookings of one item proceed at once |
+| 9 | **A search engine**, only if Postgres search falls short | A curated catalogue is well served by a Postgres trigram index |
+| 10 | **Partitioning, then sharding or multiple regions** | A last resort: one well-sized Postgres handles thousands of bookings a second |
 
 ---
 
