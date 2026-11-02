@@ -1,0 +1,9 @@
+.venv
+.git
+__pycache__
+*.pyc
+frontend
+screenshots
+*.docx
+.env
+k6-report.html

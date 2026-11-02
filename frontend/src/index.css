@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* Design tokens. Tailwind turns each --color-* and --font-* into utilities,
+   e.g. bg-plum, text-ink-soft, ring-line, font-display. */
+@theme {
+  --font-display: "Newsreader Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #1d1822;         /* text */
+  --color-ink-soft: #5b5560;    /* secondary text */
+  --color-slate: #777078;       /* muted text */
+  --color-plum: #352040;        /* the one action colour, and dark surfaces */
+  --color-plum-deep: #211329;
+  --color-pearl: #f5f2ec;       /* the page */
+  --color-paper: #fffefa;       /* panels */
+  --color-line: #e4ded7;        /* hairlines */
+  --color-line-strong: #cec5bc;
+  --color-brass: #a8874c;       /* fine details only: rules, dots */
+  --color-brass-text: #765b2b;  /* brass dark enough to read as text */
+  --color-brass-light: #d9c08c; /* brass on dark surfaces: small labels, icons, artwork lines */
+  --color-brass-pale: #e3c990;  /* the italic accent in headings on dark surfaces */
+  --color-lilac: #765c8d;       /* a soft glow behind the inventory heading */
+  --color-moss: #2d6854;        /* available, confirmed */
+  --color-wine: #8b3548;        /* fully booked, errors */
+}
+
+@layer base {
+  html {
+    background: var(--color-pearl);
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background:
+      radial-gradient(circle at 8% -6%, rgba(168, 135, 76, 0.13), transparent 28rem),
+      radial-gradient(circle at 92% 8%, rgba(53, 32, 64, 0.07), transparent 34rem),
+      var(--color-pearl);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-wrap: break-word; /* a very long name must never push the page sideways */
+  }
+  /* Visible keyboard focus everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-plum);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+
+  ::selection {
+    color: white;
+    background: var(--color-plum);
+  }
+}
+
+/* The one animated moment: the confirmation settles into place when a booking is made.
+   Skipped for people who ask for reduced motion. */
+@keyframes settle {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@utility animate-settle {
+  animation: settle 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,66 @@
+# One command starts everything:   docker compose up --build
+#
+#   Frontend  http://localhost:4710   open this one
+#   Backend   http://localhost:4711   the API
+#   Database  localhost:4712          Postgres
+#
+# The ports are unusual on purpose, so they do not clash with other projects.
+# Change them with FRONTEND_PORT, BACKEND_PORT or DB_PORT.
+#
+# The first start creates the tables and loads the CSV files; later starts
+# skip the loading. Data lives in the pgdata volume.
+# To start fresh:   docker compose down -v
+name: ten-mission
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bookings}
+      POSTGRES_USER: ${DB_USER:-bookings}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bookings}
+    ports:
+      - "${DB_PORT:-4712}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bookings} -d ${DB_NAME:-bookings}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432" # inside Docker, Postgres always listens on 5432
+      DB_NAME: ${DB_NAME:-bookings}
+      DB_USER: ${DB_USER:-bookings}
+      DB_PASSWORD: ${DB_PASSWORD:-bookings}
+      WEB_WORKERS: ${WEB_WORKERS:-4}
+      WEB_THREADS: ${WEB_THREADS:-8}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-}
+      DJANGO_HTTPS: ${DJANGO_HTTPS:-0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-4711}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/inventory')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s # time for the migration and the first data load
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4710}:80"
+
+volumes:
+  pgdata:
