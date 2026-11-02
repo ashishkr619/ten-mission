@@ -42,7 +42,7 @@ The first start creates the tables and loads `data/members.csv` and `data/invent
 docker compose run --rm backend python manage.py test bookings
 ```
 
-**61 tests** cover the booking rules, the API and the CSV loader. **7 of them fire real parallel requests at Postgres.** GitHub Actions runs them, and the frontend build, on every push.
+**63 tests** cover the booking rules, the API and the CSV loader. **7 of them fire real parallel requests at Postgres.** GitHub Actions runs them, and the frontend build, on every push.
 
 ---
 
@@ -173,9 +173,13 @@ curl -X POST localhost:4711/api/book -H 'Content-Type: application/json' \
 | Status | `code` | When |
 |---|---|---|
 | 400 | `invalid_json` | The body is not a JSON object |
+| 400 | `bad_request` | The request itself is malformed (for example an unknown host) |
 | 422 | `invalid_request` | A field or parameter is missing or wrong |
 | 404 | `member_not_found` · `item_not_found` · `booking_not_found` | It doesn't exist (someone else's booking is also "not found") |
+| 404 | `not_found` | No endpoint at that address |
+| 405 | `method_not_allowed` | Wrong method, such as GET on `/api/book`; the `Allow` header names the right one |
 | 409 | `item_expired` · `booking_limit_reached` · `sold_out` · `idempotency_key_conflict` | The rules say no |
+| 500 | `server_error` | An unexpected error; no details are shown |
 
 </details>
 

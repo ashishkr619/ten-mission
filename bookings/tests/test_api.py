@@ -1,5 +1,6 @@
 """Tests for the JSON API: status codes, the error shape, and input checking."""
 import json
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
@@ -110,10 +111,27 @@ class BookApiTests(ApiTestCase):
             self.assertIn(error_class, utils.SERVICE_ERRORS)
 
     def test_wrong_method_gives_405(self):
-        """GET on a POST-only endpoint answers 405."""
+        """The wrong method answers 405 in the JSON error shape, with the Allow header."""
         response = self.client.get("/api/book")
-        self.assertEqual(response.status_code, 405)
+        self.assertError(response, 405, "method_not_allowed")
         self.assertEqual(response["Allow"], "POST")
+        response = self.post("/api/inventory", {})
+        self.assertError(response, 405, "method_not_allowed")
+        self.assertEqual(response["Allow"], "GET")
+
+    def test_unknown_address_gives_json_404(self):
+        """An address that doesn't exist answers in the JSON error shape, not an HTML page."""
+        self.assertError(self.client.get("/api/nope"), 404, "not_found")
+        self.assertError(self.client.post("/nope"), 404, "not_found")
+
+    def test_a_crash_gives_json_500(self):
+        """An unexpected error answers 500 in the JSON error shape, without details."""
+        self.client.raise_request_exception = False  # behave like a real server: return the 500, don't re-raise
+        member, item = make_member(), make_item()
+        with patch("bookings.services.book", side_effect=RuntimeError("boom")):  # force a crash inside the view
+            response = self.book(member.id, item.id)
+        self.assertError(response, 500, "server_error")
+        self.assertNotIn("boom", response.content.decode())
 
 
 class CancelApiTests(ApiTestCase):

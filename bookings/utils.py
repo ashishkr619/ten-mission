@@ -6,6 +6,7 @@ Every error response has the same shape:
 """
 import json
 import uuid
+from functools import wraps
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -48,6 +49,41 @@ def service_error_response(error):
     """The response for a refusal raised by services.py."""
     code, message, status = SERVICE_ERRORS[type(error)]
     return error_response(code, message, status)
+
+
+def allow_methods(*methods):
+    """Use as @allow_methods("POST"). A request with any other method gets a JSON 405
+    instead of Django's empty HTML one, and the view is never called."""
+    def decorator(view):
+        @wraps(view)  # keeps the view's own name in logs and tracebacks
+        def wrapper(request, *args, **kwargs):
+            if request.method not in methods:
+                response = error_response(
+                    "method_not_allowed", f"Use {' or '.join(methods)} for this address.", 405,
+                )
+                response["Allow"] = ", ".join(methods)  # HTTP requires a 405 to name the allowed methods
+                return response
+            return view(request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+# Django calls these for errors raised outside our views, instead of its HTML pages (see config/urls.py).
+# They are used only when DEBUG is off; with DEBUG on, Django shows its debug page.
+
+def bad_request(request, exception=None):
+    """A malformed request, such as a Host header not in ALLOWED_HOSTS."""
+    return error_response("bad_request", "The request could not be understood.", 400)
+
+
+def not_found(request, exception=None):
+    """No URL pattern matches the address."""
+    return error_response("not_found", "There is nothing at this address.", 404)
+
+
+def server_error(request):
+    """An uncaught exception. The message stays generic so nothing internal leaks; the log has the details."""
+    return error_response("server_error", "Something went wrong on our side.", 500)
 
 
 def invalid_input_response(problems):

@@ -1,6 +1,6 @@
 # Load test
 
-The 61 tests prove the booking rules are correct, including under parallel requests. The load test checks the same rules at a larger scale, with traffic shaped like real use, and finds where one machine runs out of capacity. It is optional and not part of what the brief asks for.
+The 63 tests prove the booking rules are correct, including under parallel requests. The load test checks the same rules at a larger scale, with traffic shaped like real use, and finds where one machine runs out of capacity. It is optional and not part of what the brief asks for.
 
 ## Run it
 

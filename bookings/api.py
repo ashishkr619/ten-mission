@@ -7,12 +7,11 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
 
 from . import services
 from .models import Booking, InventoryItem, Member
 from .utils import (
-    booking_json, error_response, invalid_input_response, is_valid_id, item_json, member_json,
+    allow_methods, booking_json, error_response, invalid_input_response, is_valid_id, item_json, member_json,
     parse_reference, read_json_body, read_list_params, service_error_response,
 )
 
@@ -23,7 +22,7 @@ STATUSES = ("open", "sold_out", "expired")
 # csrf_exempt: CSRF attacks ride on browser cookies, which this API does not use; remove it with a login.
 
 @csrf_exempt
-@require_POST
+@allow_methods("POST")
 def book_view(request):
     try:
         data = read_json_body(request)
@@ -57,7 +56,7 @@ def book_view(request):
 # --- POST /api/cancel ------------------------------------------------------
 
 @csrf_exempt  # see book_view
-@require_POST
+@allow_methods("POST")
 def cancel_view(request):
     try:
         data = read_json_body(request)
@@ -86,7 +85,7 @@ def cancel_view(request):
 
 # --- GET endpoints for the pages ------------------------------------------
 
-@require_GET
+@allow_methods("GET")
 def members_view(request):
     """One page of members, ordered by name. ?q= searches first and last names."""
     limit, offset, search, problems = read_list_params(request)
@@ -107,7 +106,7 @@ def members_view(request):
     })
 
 
-@require_GET
+@allow_methods("GET")
 def member_view(request, member_id):
     member = None
     if is_valid_id(member_id):
@@ -117,7 +116,7 @@ def member_view(request, member_id):
     return JsonResponse(member_json(member))
 
 
-@require_GET
+@allow_methods("GET")
 def inventory_view(request):
     """One page of items: open ones first, then fully booked, then expired.
 
@@ -173,7 +172,7 @@ def inventory_view(request):
     })
 
 
-@require_GET
+@allow_methods("GET")
 def item_view(request, item_id):
     item = None
     if is_valid_id(item_id):
@@ -183,7 +182,7 @@ def item_view(request, item_id):
     return JsonResponse(item_json(item, timezone.localdate()))
 
 
-@require_GET
+@allow_methods("GET")
 def member_bookings_view(request, member_id):
     """A member's active bookings, newest first. These are the ones that can be cancelled."""
     member_exists = is_valid_id(
