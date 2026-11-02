@@ -53,6 +53,19 @@ docker compose run --rm backend python manage.py test bookings
 | **Inventory** | See every experience with the places left. Filter by open, fully booked or expired, and search by title. |
 | **Book** | Pick a member and an experience, then book. The confirmation shows the booking reference. The member's active bookings are listed below and can be cancelled (two clicks, so nobody cancels by accident). |
 
+![The inventory page: every experience with the places left](docs/screenshots/inventory.png)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/booked.png" alt="A confirmed booking with its reference"></td>
+<td width="50%"><img src="docs/screenshots/refused.png" alt="A refused booking with a clear reason"></td>
+</tr>
+<tr>
+<td align="center">A booking, confirmed with its reference</td>
+<td align="center">A refusal, with the reason in plain words</td>
+</tr>
+</table>
+
 ```mermaid
 flowchart LR
     U[Browser] -->|:4710| N["nginx<br/>React app"]
